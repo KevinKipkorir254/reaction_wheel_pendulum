@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "b2b3df899c7467251671081b",
+    "documentMicroversion": "75bce4b182d4425cbd183e08",
+    "documentVersion": "01fc54f0e1202fc9ee4a3970",
+    "elementId": "58e3603a4624b4442a84ce0a",
+    "fullConfiguration": "default",
+    "id": "M8AZ39aSjsNGV9e1Q",
+    "isStandardContent": false,
+    "name": "reaction_wheel <1>",
+    "partId": "JHD",
+    "suppressed": false,
+    "type": "Part"
+}

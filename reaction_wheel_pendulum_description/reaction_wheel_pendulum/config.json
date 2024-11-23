@@ -1,0 +1,7 @@
+{
+    "documentId": "7f128ace963495aa42fb8db7",
+    "outputFormat": "urdf",
+    "packageName": "reaction_wheel_pendulum_description/reaction_wheel_pendulum",
+    "robotName": "reaction_wheel_pendulum",
+    "assemblyName": "reaction_wheel_pendulum"
+  }

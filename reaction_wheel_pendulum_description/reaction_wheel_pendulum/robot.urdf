@@ -1,0 +1,186 @@
+<robot name="reaction_wheel_pendulum">
+<link name="support_plaform_1">
+<visual>
+<origin xyz="-0.085000000000000019984 0.024999999999999994449 -0.020000000000000003886" rpy="-1.3877787807814456755e-16 1.9047944049941415051e-16 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/support_plaform_1.stl"/>
+</geometry>
+<material name="support_plaform_1_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="-0.085000000000000019984 0.024999999999999994449 -0.020000000000000003886" rpy="-1.3877787807814456755e-16 1.9047944049941415051e-16 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/support_plaform_1.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-0.084999999999999978351 0.0019366224157372005643 0.20527754982977566844" rpy="0 0 0"/>
+<mass value="8.3650792577619803581" />
+<inertia ixx="0.18809404056513884251" ixy="6.6429634534729561893e-19"  ixz="-3.3040840509945104842e-17" iyy="0.19768960892502629445" iyz="0.0034874963072423492694" izz="0.014632587595117504606" />
+</inertial>
+</link>
+
+<link name="cart_pole_line">
+<visual>
+<origin xyz="0.0050000000000000009714 -0.049999999999999988898 -1.3877787807814456755e-17" rpy="-1.570796326794896558 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_pole_line.stl"/>
+</geometry>
+<material name="cart_pole_line_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0.0050000000000000009714 -0.049999999999999988898 -1.3877787807814456755e-17" rpy="-1.570796326794896558 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_pole_line.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-0.99507213325206489429 -0.021216690244781032104 -3.5306212902944823361e-05" rpy="0 0 0"/>
+<mass value="17.129471613392958318" />
+<inertia ixx="0.010371517126750266768" ixy="-2.2571194222369972551e-05"  ixz="8.5176426230256071983e-06" iyy="5.7133527876254550648" iyz="-5.938288855520099704e-06" izz="5.7091229148612372413" />
+</inertial>
+</link>
+
+<link name="support_plaform_1_2">
+<visual>
+<origin xyz="0.0050000000000001154632 -0.48999999999999999112 8.3266726846886740532e-17" rpy="-1.570796326794896558 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/support_plaform_1.stl"/>
+</geometry>
+<material name="support_plaform_1_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0.0050000000000001154632 -0.48999999999999999112 8.3266726846886740532e-17" rpy="-1.570796326794896558 -1.570796326794896558 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/support_plaform_1.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-0.018063377584262709646 -0.26472245017022433267 7.9318860187151341436e-17" rpy="0 0 0"/>
+<mass value="8.3650792577619803581" />
+<inertia ixx="0.19768960892502629445" ixy="0.0034874963072423744229"  ixz="6.584292432897078411e-49" iyy="0.014632587595117504606" iyz="5.4275303833731067647e-51" izz="0.18809404056513884251" />
+</inertial>
+</link>
+
+<joint name="fastened 3" type="fixed">
+<origin xyz="-1.9899999999999999911 5.5511151231257827021e-17 0" rpy="3.141592653589793116 2.6434332570020888873e-32 3.141592653589793116" />
+<parent link="cart_pole_line" />
+<child link="support_plaform_1_2" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+<link name="cart_move">
+<visual>
+<origin xyz="-0.075000000000000066613 -0.049999999999999988898 0.049999999999999988898" rpy="3.141592653589793116 -3.0839528461809912666e-16 2.5386489872101804252e-48" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_move.stl"/>
+</geometry>
+<material name="cart_move_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="-0.075000000000000066613 -0.049999999999999988898 0.049999999999999988898" rpy="3.141592653589793116 -3.0839528461809912666e-16 2.5386489872101804252e-48" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_move.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-5.5511151231257827021e-17 -0.00061948576139277816699 -0.010074243351339003116" rpy="0 0 0"/>
+<mass value="2.7582989593438584919" />
+<inertia ixx="0.0051071794741707502926" ixy="-5.308756805655342459e-21"  ixz="-8.7459673115728478719e-19" iyy="0.0072884337806232426735" iyz="1.7214130923659983201e-05" izz="0.007943139603199119228" />
+</inertial>
+</link>
+
+<link name="cart_swinger">
+<visual>
+<origin xyz="1.1102230246251565404e-16 -0.38000000000000000444 -0.020000000000000000416" rpy="-1.570796326794896558 -2.5386489872101804252e-48 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_swinger.stl"/>
+</geometry>
+<material name="cart_swinger_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="1.1102230246251565404e-16 -0.38000000000000000444 -0.020000000000000000416" rpy="-1.570796326794896558 -2.5386489872101804252e-48 0" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/cart_swinger.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-2.9431130203074004107e-08 -0.18572699235086756464 -0.0078668877937311809667" rpy="0 0 0"/>
+<mass value="0.78268947954770595743" />
+<inertia ixx="0.010314898108551727798" ixy="3.5124269531667310023e-10"  ixz="-3.2163942471924808674e-10" iyy="0.00010133443893613864554" iyz="-4.7170147553069125598e-05" izz="0.010325356775302408155" />
+</inertial>
+</link>
+
+<link name="reaction_wheel">
+<visual>
+<origin xyz="0 0 -0.0050000000000000009714" rpy="-1.570796326794896558 -2.5386489872101804252e-48 -1.1641176552740606138e-32" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/reaction_wheel.stl"/>
+</geometry>
+<material name="reaction_wheel_material">
+<color rgba="0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0 0 -0.0050000000000000009714" rpy="-1.570796326794896558 -2.5386489872101804252e-48 -1.1641176552740606138e-32" />
+<geometry>
+<mesh filename="package://reaction_wheel_pendulum_description/reaction_wheel_pendulum/reaction_wheel.stl"/>
+</geometry>
+</collision>
+<inertial>
+<origin xyz="3.4484178418909866697e-18 8.1990635265255325465e-18 0.0074999999999999988551" rpy="0 0 0"/>
+<mass value="2.0890783967314723313" />
+<inertia ixx="0.0053204580946412160028" ixy="-1.0691058840368782585e-50"  ixz="-1.7096428796103872258e-50" iyy="0.0053204580946412151354" iyz="3.5786703182146273562e-35" izz="0.010426371086025272225" />
+</inertial>
+</link>
+
+<joint name="continuous_revolute 2" type="continuous">
+<origin xyz="1.1102230246251565404e-16 -0.35000000000000003331 -0.024999999999999994449" rpy="3.141592653589793116 -6.1629758220391519929e-33 3.141592653589793116" />
+<parent link="cart_swinger" />
+<child link="reaction_wheel" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+<joint name="continuous_revolute 1" type="continuous">
+<origin xyz="0 -0.064682458365518544219 5.5511151231257827021e-17" rpy="-1.570796326794896558 -3.0839528461809912666e-16 2.5386489872101804252e-48" />
+<parent link="cart_move" />
+<child link="cart_swinger" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+<joint name="fastened 4" type="fixed">
+<origin xyz="-0.99500000000000010658 0 0" rpy="-1.570796326794896558 -1.4937495864964432488e-33 3.141592653589793116" />
+<parent link="cart_pole_line" />
+<child link="cart_move" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+<joint name="fastened 2" type="fixed">
+<origin xyz="-0.085000000000000019984 0.020000000000000055927 0.46999999999999997335" rpy="1.57079632679489678 1.3877787807814456755e-16 1.570796326794896558" />
+<parent link="support_plaform_1" />
+<child link="cart_pole_line" />
+<axis xyz="0 0 1"/>
+<limit effort="1" velocity="20" />
+<joint_properties friction="0.0"/>
+</joint>
+
+
+</robot>
