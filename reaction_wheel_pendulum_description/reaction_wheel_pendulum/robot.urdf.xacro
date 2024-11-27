@@ -1,4 +1,9 @@
-<robot name="reaction_wheel_pendulum">
+<?xml version="1.0"?>
+<robot name="reaction_wheel_pendulum" xmlns:xacro="http://wiki.ros.org/xacro">
+
+<xacro:include filename="$(find reaction_wheel_pendulum_description)/reaction_wheel_pendulum/ros2_control.urdf.xacro"/> 
+
+
 <link name="support_plaform_1">
 <visual>
 <origin xyz="-0.085000000000000019984 0.024999999999999994449 -0.020000000000000003886" rpy="-1.3877787807814456755e-16 1.9047944049941415051e-16 0" />
@@ -146,7 +151,7 @@
 </inertial>
 </link>
 
-<joint name="continuous_revolute 2" type="continuous">
+<joint name="continuous_revolute_2" type="continuous">
 <origin xyz="1.1102230246251565404e-16 -0.35000000000000003331 -0.024999999999999994449" rpy="3.141592653589793116 -6.1629758220391519929e-33 3.141592653589793116" />
 <parent link="cart_swinger" />
 <child link="reaction_wheel" />
@@ -155,7 +160,7 @@
 <joint_properties friction="0.0"/>
 </joint>
 
-<joint name="continuous_revolute 1" type="continuous">
+<joint name="continuous_revolute_1" type="continuous">
 <origin xyz="0 -0.064682458365518544219 5.5511151231257827021e-17" rpy="-1.570796326794896558 -3.0839528461809912666e-16 2.5386489872101804252e-48" />
 <parent link="cart_move" />
 <child link="cart_swinger" />

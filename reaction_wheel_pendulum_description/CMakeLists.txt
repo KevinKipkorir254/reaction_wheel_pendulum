@@ -28,6 +28,7 @@ install(
     rviz
     launch
     reaction_wheel_pendulum
+    config
   DESTINATION
     share/${PROJECT_NAME}/
 )
