@@ -29,6 +29,7 @@ install(
     launch
     reaction_wheel_pendulum
     config
+    worlds
   DESTINATION
     share/${PROJECT_NAME}/
 )
