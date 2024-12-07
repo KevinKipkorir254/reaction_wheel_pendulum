@@ -64,66 +64,80 @@ using namespace std::chrono_literals;
 
 class JointStateSubscriber : public rclcpp::Node
 {
-  public:
+public:
     JointStateSubscriber()
-    : Node("state_space_subscriber")
+        : Node("state_space_subscriber")
     {
-      subscription_ = this->create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, std::bind(&JointStateSubscriber::topic_callback, this, _1));
-      publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("effort_controller/commands", 10);
+        subscription_ = this->create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, std::bind(&JointStateSubscriber::topic_callback, this, _1));
+        publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("effort_controller/commands", 10);
 
-            this->declare_parameter("K", rclcpp::PARAMETER_DOUBLE_ARRAY);
-            this->declare_parameter("kd", rclcpp::PARAMETER_DOUBLE);
-            this->declare_parameter("ke", rclcpp::PARAMETER_DOUBLE);
-            this->declare_parameter("kv", rclcpp::PARAMETER_DOUBLE);
-            this->declare_parameter("lqr_transition_angle", rclcpp::PARAMETER_DOUBLE);
+        this->declare_parameter("K", rclcpp::PARAMETER_DOUBLE_ARRAY);
+        this->declare_parameter("kd", rclcpp::PARAMETER_DOUBLE);
+        this->declare_parameter("ke", rclcpp::PARAMETER_DOUBLE);
+        this->declare_parameter("kv", rclcpp::PARAMETER_DOUBLE);
+        this->declare_parameter("lqr_transition_angle", rclcpp::PARAMETER_DOUBLE);
+        this->declare_parameter("rviz_test", rclcpp::PARAMETER_BOOL);
 
-                        
-            try {
-                K_ = Eigen::Vector4d(this->get_parameter("K").as_double_array().data());
-                kd_ = this->get_parameter("kd").as_double();
-                ke_ = this->get_parameter("ke").as_double();
-                kv_ = this->get_parameter("kv").as_double();
-                lqr_transition_angle_ = this->get_parameter("lqr_transition_angle").as_double();
+        try
+        {
+            K_ = Eigen::Vector4d(this->get_parameter("K").as_double_array().data());
+            kd_ = this->get_parameter("kd").as_double();
+            ke_ = this->get_parameter("ke").as_double();
+            kv_ = this->get_parameter("kv").as_double();
+            lqr_transition_angle_ = this->get_parameter("lqr_transition_angle").as_double();
+            rviz_test = this->get_parameter("rviz_test").as_bool();
 
-                
             RCLCPP_WARN(this->get_logger(), "K: %.4f, %.4f, %.4f, %.4f", K_(0), K_(1), K_(2), K_(3));
             RCLCPP_WARN(this->get_logger(), "kd: %.4f", kd_);
             RCLCPP_WARN(this->get_logger(), "ke: %.4f", ke_);
             RCLCPP_WARN(this->get_logger(), "kp: %.4f", kv_);
             RCLCPP_WARN(this->get_logger(), "lqr_transition_angle_: %.4f", lqr_transition_angle_);
-
-            } catch (const rclcpp::exceptions::ParameterUninitializedException & e) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Required parameter not defined: " << e.what());
-                throw e;
+            if (rviz_test)
+            {
+                RCLCPP_WARN(this->get_logger(), "RVIZ_TEST: TRUE");
             }
-
+            else
+            {
+                RCLCPP_WARN(this->get_logger(), "RVIZ_TEST: FALSE");
+            }
+        }
+        catch (const rclcpp::exceptions::ParameterUninitializedException &e)
+        {
+            RCLCPP_ERROR_STREAM(this->get_logger(), "Required parameter not defined: " << e.what());
+            throw e;
+        }
     }
 
-  private:
-    void topic_callback(const sensor_msgs::msg::JointState & msg)
+private:
+    void topic_callback(const sensor_msgs::msg::JointState &msg)
     {
         // Find the indices of the "slider" and "swinger" joints
         auto swinger1_it = std::find(msg.name.begin(), msg.name.end(), "continuous_revolute_1");
         auto swinger2_it = std::find(msg.name.begin(), msg.name.end(), "continuous_revolute_2");
 
+        double swinger1_position;
+        double swinger1_velocity;
 
-            double swinger1_position;
-            double swinger1_velocity;
-            
+        double swinger2_position;
+        double swinger2_velocity;
 
-            double swinger2_position;
-            double swinger2_velocity;
-            
-            double switching_range = lqr_transition_angle_;
-
+        double switching_range = lqr_transition_angle_;
 
         if (swinger1_it != msg.name.end())
         {
             auto index = std::distance(msg.name.begin(), swinger1_it);
             swinger1_position = msg.position[index];
-            swinger1_velocity = msg.velocity[index];
+            if (!rviz_test)
+            {
+                swinger1_velocity = msg.velocity[index];
+            }
+            else
+            {
+                swinger1_velocity = swinger1_position - swinger1_previous_position;
+                swinger1_previous_position = swinger1_position;
+            }
 
-            //RCLCPP_INFO(this->get_logger(), "Slider  -> Position: %.2f, Velocity: %.2f", slider_position, slider_velocity);
+            // RCLCPP_INFO(this->get_logger(), "Slider  -> Position: %.2f, Velocity: %.2f", slider_position, slider_velocity);
         }
 
         else
@@ -135,9 +149,17 @@ class JointStateSubscriber : public rclcpp::Node
         {
             auto index = std::distance(msg.name.begin(), swinger2_it);
             swinger2_position = msg.position[index];
-            swinger2_velocity = msg.velocity[index];
+            if (!rviz_test)
+            {
+                swinger2_velocity = msg.velocity[index];
+            }
+            else
+            {
+                swinger2_velocity = swinger2_position - swinger2_previous_position;
+                swinger2_previous_position = swinger2_position;
+            }
 
-            //RCLCPP_INFO(this->get_logger(), "Swinger -> Position: %.2f, Velocity: %.2f", swinger_position, swinger_velocity);
+            // RCLCPP_INFO(this->get_logger(), "Swinger -> Position: %.2f, Velocity: %.2f", swinger_position, swinger_velocity);
         }
         else
         {
@@ -146,86 +168,85 @@ class JointStateSubscriber : public rclcpp::Node
 
         double f;
 
-        if((swinger1_it != msg.name.end()) || (swinger2_it != msg.name.end()))
+        if ((swinger1_it != msg.name.end()) || (swinger2_it != msg.name.end()))
         {
 
-              // Normalize swinger_position to [ -PI, PI]
-              double normalized_position = normalize_to_pi(swinger1_position);
-              double torque;
-              
-  
-         // USE VELOCITY TO CHECK THE DIRECTION WE ARE ENTERING FROM
-         if( swinger1_velocity < 0.0)//anti-clockwise direction
-         {
-              //RCLCPP_INFO(this->get_logger(), "anti_clockwise");
-              RCLCPP_INFO(this->get_logger(), BLUE_TEXT"CLOCKWISE -> %.4f, %.4f", convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
+            // Normalize swinger_position to [ -PI, PI]
+            double normalized_position = normalize_to_pi(swinger1_position);
+            double torque;
 
-              
-              double lower_limit = -PI - switching_range; //-210
-              double upper_limit = -PI + switching_range; //-150
+            // USE VELOCITY TO CHECK THE DIRECTION WE ARE ENTERING FROM
+            if (swinger1_velocity < 0.0) // anti-clockwise direction
+            {
+                // RCLCPP_INFO(this->get_logger(), "anti_clockwise");
+                RCLCPP_INFO(this->get_logger(), BLUE_TEXT "CLOCKWISE -> %.4f, %.4f", convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
 
-              if((normalized_position > convert_to_rads(-150)) && (normalized_position < convert_to_rads(0.0)))//IT IS IN TH RANGE (0 TO -150) RUN THE CONTROLLER TO BRING IT TO THE HOMICLINIC ORBIT.
-              {
-                   RCLCPP_INFO(this->get_logger(), YELLOW_TEXT"(0 TO -150)");  
-                   torque = calculate_controller_force_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);  
-              }
-              else if((normalized_position < upper_limit) && (normalized_position > lower_limit)) //IT IS IN THE RANGE (-150 TO -210) THEN RUN THE LQR TO MAINTAIN IT TO THE HOMICLINIC ORBIT
-              {
-                  double error = -PI - swinger1_position;
-                  RCLCPP_INFO(this->get_logger(), MAGENTA_TEXT"(-150 TO -210)E:-> %.4f, P: -> %.4f, V: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
-                  torque = calculate_LQR_torque_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
-                  
-              }
-              else if((normalized_position > convert_to_rads(150))) //IF IT TURNS VELOCITY MID LQR
-              {
-                  double error = PI - swinger1_position;
-                  RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT"(150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
-                  torque =  calculate_LQR_torque_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
-              }
-              else //HEADING BACK
-              {
-                 RCLCPP_INFO(this->get_logger(), GREEN_TEXT"HEADING BACK");
-                 torque = calculate_controller_force_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
-              }
+                double lower_limit = -PI - switching_range; //-210
+                double upper_limit = -PI + switching_range; //-150
 
-         }
-         else if(swinger1_velocity > 0.0)//clockwise direction
-         {
-              //RCLCPP_INFO(this->get_logger(), "clockwise");
-              RCLCPP_INFO(this->get_logger(), RED_TEXT"ANTI-CLOCKWISE -> %.4f, %.4f", convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
+                if ((normalized_position > convert_to_rads(-150)) && (normalized_position < convert_to_rads(0.0))) // IT IS IN TH RANGE (0 TO -150) RUN THE CONTROLLER TO BRING IT TO THE HOMICLINIC ORBIT.
+                {
+                    torque = calculate_controller_force_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
+                    RCLCPP_INFO(this->get_logger(), YELLOW_TEXT "(0 TO -150)");
+                }
+                else if ((normalized_position < upper_limit) && (normalized_position > lower_limit)) // IT IS IN THE RANGE (-150 TO -210) THEN RUN THE LQR TO MAINTAIN IT TO THE HOMICLINIC ORBIT
+                {
+                    double error = -PI - swinger1_position;
+                    torque = calculate_LQR_torque_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
+                    torque = -1 * torque;
+                    RCLCPP_INFO(this->get_logger(), MAGENTA_TEXT "ENTER (-150 TO -210)E:-> %.4f, P: -> %.4f, V: -> %.4f, T: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity), torque);
+                }
+                else if ((normalized_position > convert_to_rads(150))) // IF IT TURNS VELOCITY MID LQR
+                {
+                    double error = PI - swinger1_position;
+                    torque = calculate_LQR_torque_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
+                    torque = -1 * torque;
+                    RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT "LEAVE (150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f, T: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity), torque);
+                }
+                else // HEADING BACK
+                {
+                    torque = calculate_controller_force_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
+                    RCLCPP_INFO(this->get_logger(), GREEN_TEXT "HEADING BACK");
+                }
+            }
+            else if (swinger1_velocity > 0.0) // clockwise direction
+            {
+                // RCLCPP_INFO(this->get_logger(), "clockwise");
+                RCLCPP_INFO(this->get_logger(), RED_TEXT "ANTI-CLOCKWISE -> %.4f, %.4f", convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
 
-              
-              double lower_limit = PI - switching_range; //150
-              double upper_limit = PI + switching_range; //210
+                double lower_limit = PI - switching_range; // 150
+                double upper_limit = PI + switching_range; // 210
 
-              if((normalized_position < convert_to_rads(150)) && (normalized_position > convert_to_rads(0.0)))//IT IS IN TH RANGE (0 TO 150) RUN THE CONTROLLER TO BRING IT TO THE HOMICLINIC ORBIT.
-              {
-                   RCLCPP_INFO(this->get_logger(), BRIGHT_YELLOW_TEXT"(0 TO 150)");   
-                   torque = calculate_controller_force_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity); 
-              }
-              else if((normalized_position < upper_limit) && (normalized_position > lower_limit)) //IT IS IN THE RANGE (150 TO 210) THEN RUN THE LQR TO MAINTAIN IT TO THE HOMICLINIC ORBIT
-              {
-                  double error = PI - swinger1_position;
-                  RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT"(150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
-                  torque =  calculate_LQR_torque_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
-              }
-              else if((normalized_position < convert_to_rads(-150))) //IF IT TURNS VELOCITY MID LQR
-              {
-                  double error = PI - swinger1_position;
-                  RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT"(150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity));
-                  torque =  calculate_LQR_torque_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
-              }
-              else //HEADING BACK
-              {
-                RCLCPP_INFO(this->get_logger(), BRIGHT_GREEN_TEXT"HEADING BACK");
-                torque = calculate_controller_force_output( swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
-              }
-         }
-               
-                auto message = std_msgs::msg::Float64MultiArray();
-                message.data.push_back(torque);
-                publisher_->publish(message);
+                if ((normalized_position < convert_to_rads(150)) && (normalized_position > convert_to_rads(0.0))) // IT IS IN TH RANGE (0 TO 150) RUN THE CONTROLLER TO BRING IT TO THE HOMICLINIC ORBIT.
+                {
+                    torque = calculate_controller_force_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
+                    RCLCPP_INFO(this->get_logger(), BRIGHT_YELLOW_TEXT "(0 TO 150)");
+                }
+                else if ((normalized_position < upper_limit) && (normalized_position > lower_limit)) // IT IS IN THE RANGE (150 TO 210) THEN RUN THE LQR TO MAINTAIN IT TO THE HOMICLINIC ORBIT
+                {
+                    double error = PI - swinger1_position;
+                    torque = calculate_LQR_torque_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
+                    torque = -1 * torque;
+                    RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT "ENTER (150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f, T: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity), torque);
+                }
+                else if ((normalized_position < convert_to_rads(-150))) // IF IT TURNS VELOCITY MID LQR
+                {
+                    double error = (PI - swinger1_position) - (PI * 2);
+                    torque = calculate_LQR_torque_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity, error);
+                    torque = -1 * torque;
+                    RCLCPP_INFO(this->get_logger(), BRIGHT_MAGENTA_TEXT "LEAVE (150 TO 210) E:-> %.4f, P: -> %.4f, V: -> %.4f, T: -> %.4f", error, convert_to_degrees(swinger1_position), convert_to_degrees(swinger1_velocity), torque);
+                }
+                else // HEADING BACK
+                {
+                    torque = calculate_controller_force_output(swinger1_position, swinger2_position, swinger1_velocity, swinger2_velocity);
+                    RCLCPP_INFO(this->get_logger(), BRIGHT_GREEN_TEXT "HEADING BACK");
+                }
+            }
 
+           //torque = -1 * torque;
+            auto message = std_msgs::msg::Float64MultiArray();
+            message.data.push_back( torque);
+            publisher_->publish(message);
         }
     }
 
@@ -239,15 +260,18 @@ class JointStateSubscriber : public rclcpp::Node
      * @param angle The angle in radians to be normalized.
      * @return The normalized angle in the range [-π, π].
      */
-    double normalize_to_pi(double angle) 
+    double normalize_to_pi(double angle)
     {
-            double normalized_position = fmod(angle, 2 * M_PI); // Wrap to [-2π, 2π]
-            if (normalized_position > M_PI) {
-                normalized_position -= 2 * M_PI; // Wrap to [-π, π]
-            } else if (normalized_position < -M_PI) {
-                normalized_position += 2 * M_PI; // Wrap to [-π, π]
-            }
-            return normalized_position;
+        double normalized_position = fmod(angle, 2 * M_PI); // Wrap to [-2π, 2π]
+        if (normalized_position > M_PI)
+        {
+            normalized_position -= 2 * M_PI; // Wrap to [-π, π]
+        }
+        else if (normalized_position < -M_PI)
+        {
+            normalized_position += 2 * M_PI; // Wrap to [-π, π]
+        }
+        return normalized_position;
     }
 
     /**
@@ -312,25 +336,23 @@ class JointStateSubscriber : public rclcpp::Node
         double m1 = 0.78268947954770595743;
         double m2 = 2.0890783967314723313;
         double pendulum_length = 0.4;
-        double pendulum_length_c1 = pendulum_length/2;
+        double pendulum_length_c1 = pendulum_length / 2;
         double m_dash = m1 * pendulum_length_c1 + m2 * pendulum_length;
         double g = 9.81;
 
-        double q1 = M_PI   - swinger1_position;
+        double q1 = M_PI - swinger1_position;
         double q2 = M_PI_2 - swinger2_position;
 
         double inertia1 = 0; //(m1 * pendulum_length_c1 * pendulum_length_c1)/12; //SOLVE THIS ONE SINCE IT IS A VERY IMPORTANT PART OF THIS PROJECT
-        double inertia2 = 0; //0.5*(m2 * 0.1); //SOLVE THIS ONE SINCE IT IS A VERY IMPORTANT PART OF THIS PROJECT
+        double inertia2 = 0; // 0.5*(m2 * 0.1); //SOLVE THIS ONE SINCE IT IS A VERY IMPORTANT PART OF THIS PROJECT
 
-
-        double dq1 = swinger1_velocity;//CHECK FOR ACCURACY AS IN ROATATION DIRECTIOn
-        double dq2 = swinger2_velocity;//CHECK FOR ACCURACY
+        double dq1 = swinger1_velocity; // CHECK FOR ACCURACY AS IN ROATATION DIRECTIOn
+        double dq2 = swinger2_velocity; // CHECK FOR ACCURACY
 
         double d11 = m1 * pendulum_length_c1 * pendulum_length_c1 + m2 * pendulum_length * pendulum_length + inertia1 + inertia2;
         double d12 = inertia2;
         double d21 = inertia2;
         double d22 = inertia2;
-
 
         Eigen::Matrix2d Dq;
         Dq << d11, d12, d21, d22;
@@ -340,15 +362,15 @@ class JointStateSubscriber : public rclcpp::Node
 
         double energy = 0.5 * Q_.transpose() * Dq * Q_ + m_dash * g * (cos(q1) - 1);
 
-            // Control parameters
+        // Control parameters
         /*--------------------------------------------------------------------------------*/
-        //THIS SHOULD BE ADDED TO A YAML FILE
+        // THIS SHOULD BE ADDED TO A YAML FILE
         double kd = kd_;
         double ke = ke_;
         double kv = kv_;
-         /*-------------------------------------------------------------------------------*/
+        /*-------------------------------------------------------------------------------*/
 
-        double torque = -kd * (ke * energy *dq2 + kv * (d21 * dq1 + d22 * dq2));
+        double torque = -kd * (ke * energy * dq2 + kv * (d21 * dq1 + d22 * dq2));
         double f = torque;
         return f;
     }
@@ -370,16 +392,15 @@ class JointStateSubscriber : public rclcpp::Node
      */
     double calculate_LQR_torque_output(double swinger1_position, double swinger2_position, double swinger1_velocity, double swinger2_velocity, double error)
     {
-        double gains_[4] = { K_(0), K_(1), K_(2), K_(3)};
+        double gains_[4] = {K_(0), K_(1), K_(2), K_(3)};
 
-       double from_output = (gains_[0] * error);
-       double first = (gains_[2]*swinger2_position) + (gains_[1]*swinger1_velocity) + (gains_[3]*swinger2_velocity);
+        double from_output = (gains_[0] * error);
+        double first = (gains_[2] * swinger2_position) + (gains_[1] * swinger1_velocity) + (gains_[3] * swinger2_velocity);
 
-       double final_gain = (from_output - first);
-       double f = final_gain;
-       return f;
+        double final_gain = (from_output - first);
+        double f = final_gain;
+        return f;
     }
-
 
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr subscription_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_; // effort controller publisher
@@ -389,12 +410,15 @@ class JointStateSubscriber : public rclcpp::Node
     double kv_;
     double lqr_transition_angle_;
     double error;
+    bool rviz_test = true;
+    double swinger1_previous_position = 0.0;
+    double swinger2_previous_position = 0.0;
 };
 
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<JointStateSubscriber>());
-  rclcpp::shutdown();
-  return 0;
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<JointStateSubscriber>());
+    rclcpp::shutdown();
+    return 0;
 }

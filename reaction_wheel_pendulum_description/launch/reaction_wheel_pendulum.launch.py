@@ -4,7 +4,7 @@ from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
 
 package_name = "reaction_wheel_pendulum_description"
-urdf_file_name = "robot.urdf"
+urdf_file_name = "robot.urdf.xacro"
 
 def generate_launch_description():
 

@@ -9,6 +9,7 @@
     # 0.0 angle - upward position. When absolute angle is less than this threshold
     # transition from swing up to LQR
     lqr_transition_angle: 0.523599
+    rviz_test: false
    
 # K_ = Eigen::Vector4d(this->get_parameter("K").as_double_array().data());
 # ke_ = this->get_parameter("ke").as_double();
